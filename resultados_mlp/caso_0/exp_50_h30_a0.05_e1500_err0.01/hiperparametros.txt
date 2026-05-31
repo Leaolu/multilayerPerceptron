@@ -1,0 +1,4 @@
+--- Hiperparametros da Rede ---
+Entradas: 120 | Ocultas: 30 | Saidas: 26
+Taxa de Aprendizado: 0.05 | Paciencia (Early Stop): 20
+Maximo Epocas: 1500 | Erro Minimo: 0.01
