@@ -78,6 +78,12 @@ for c in "${CASOS[@]}"; do
                     [ -f "resumo_teste_autoral.txt" ] && mv "resumo_teste_autoral.txt" "$PASTA_EXP/"
                     [ -f "saidas_letras_autoral.csv" ] && mv "saidas_letras_autoral.csv" "$PASTA_EXP/"
 
+                    # 2b. MOVE as matrizes de confusão (teste e autoral)
+                    [ -f "matriz_confusao_teste.csv" ] && mv "matriz_confusao_teste.csv" "$PASTA_EXP/"
+                    [ -f "matriz_confusao_teste.png" ] && mv "matriz_confusao_teste.png" "$PASTA_EXP/"
+                    [ -f "matriz_confusao_autoral.csv" ] && mv "matriz_confusao_autoral.csv" "$PASTA_EXP/"
+                    [ -f "matriz_confusao_autoral.png" ] && mv "matriz_confusao_autoral.png" "$PASTA_EXP/"
+
                     # 3. COPIA os arquivos da base de dados autoral
                     [ -f "X_autoral.txt" ] && cp "X_autoral.txt" "$PASTA_EXP/"
                     [ -f "Y_autoral.txt" ] && cp "Y_autoral.txt" "$PASTA_EXP/"

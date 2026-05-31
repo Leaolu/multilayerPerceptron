@@ -10,7 +10,7 @@ from mlp_init import (inicializar_pesos, carregar_dataset_csv, carregar_caracter
                       carregar_letras_com_buraco, carregar_letras_com_curva)
 from mlp_forward import inferencia
 from mlp_treino import treinar, calcular_erro_conjunto
-from mlp_avaliacao import matriz_confusao, acuracia, plotar_curva_erro, salvar_saidas_teste
+from mlp_avaliacao import matriz_confusao, acuracia, plotar_curva_erro, salvar_saidas_teste, salvar_matriz_confusao
 
 
 def converter_para_one_hot(T, n_classes):
@@ -108,6 +108,21 @@ def main():
     T_predito_letras = mapear_saida_para_texto(T_predito_ints, caso)
     salvar_saidas_teste(X_teste, T_teste_letras, T_predito_letras, "saidas_teste.csv")
 
+    # Matriz de confusão do conjunto de teste (requisito do vídeo).
+    # Para o caso multiclasse usamos os rótulos A-Z; para os binários,
+    # rótulos textuais que descrevem a presença/ausência da característica.
+    if caso == 0:
+        rotulos_teste = [chr(i + ord('A')) for i in range(n_saidas)]
+    elif caso == 1:
+        rotulos_teste = ["sem_buraco", "com_buraco"]
+    else:
+        rotulos_teste = ["sem_curva", "com_curva"]
+    salvar_matriz_confusao(
+        T_teste, T_predito_ints, n_saidas, rotulos_teste,
+        "matriz_confusao_teste.csv", "matriz_confusao_teste.png",
+        titulo="Matriz de Confusão - Conjunto de Teste"
+    )
+
     # TESTE EXTRA: VARIAÇÃO AUTORAL
     # Avalia a rede treinada em um conjunto de dados com ruído feito por nós,
     # verificando a capacidade de generalização do modelo em um caso mais real
@@ -140,6 +155,13 @@ def main():
         T_aut_letras = mapear_saida_para_texto(T_aut, caso)
         T_predito_aut_letras = mapear_saida_para_texto(T_predito_aut_ints, caso)
         salvar_saidas_teste(X_aut, T_aut_letras, T_predito_aut_letras, "saidas_letras_autoral.csv")
+
+        # Matriz de confusão do conjunto autoral (mesma estratégia de rótulos do teste).
+        salvar_matriz_confusao(
+            T_aut, T_predito_aut_ints, n_saidas, rotulos_teste,
+            "matriz_confusao_autoral.csv", "matriz_confusao_autoral.png",
+            titulo="Matriz de Confusão - Conjunto Autoral"
+        )
 
         print("Resultados gravados em 'resumo_teste_autoral.txt' e 'saidas_letras_autoral.csv'")
 
