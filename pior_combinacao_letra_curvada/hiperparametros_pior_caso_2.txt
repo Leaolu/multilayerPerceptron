@@ -1,0 +1,19 @@
+===================================================================
+  HIPERPARÂMETROS - PIOR DESEMPENHO - BINÁRIO (LETRAS COM CURVA) 
+===================================================================
+
+Pior Experimento: exp_288
+--- Hiperparâmetros da Configuração ---
+  - Neurônios Ocultos (Hidden)     : 30
+  - Taxa de Aprendizado (Alpha)    : 0.2
+  - Limite Máximo de Épocas        : 2000
+  - Erro Mínimo Estipulado         : 0.005
+
+--- Métricas Alcançadas (Pior Performance) ---
+  - Acurácia Alcançada (Teste)     : 82.31%
+  - Acurácia Alcançada (Ruidoso)   : 64.62%
+  - Épocas Executadas até Parada   : 26
+  - Erro Quadrático Médio Final    : 0.04567841292068297
+
+[NOTA] Este modelo representa a pior combinação de hiperparâmetros,
+    útil para análise contrastante com a melhor combinação.

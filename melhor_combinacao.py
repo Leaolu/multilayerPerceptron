@@ -47,8 +47,11 @@ def analisar_experimentos(caso):
         id_exp, h, alpha, max_epocas, erro_min = match.groups()
 
         # calcula acurácia no conjunto de teste a partir do CSV de saídas
+        # Tenta primeiro na nova estrutura (original/), depois na raiz (legado)
         acc_teste = 0.0
-        caminho_teste = os.path.join(caminho_pasta, "saidas_teste.csv")
+        caminho_teste = os.path.join(caminho_pasta, "original", "saidas_teste.csv")
+        if not os.path.exists(caminho_teste):
+            caminho_teste = os.path.join(caminho_pasta, "saidas_teste.csv")
         if os.path.exists(caminho_teste):
             with open(caminho_teste, 'r', encoding='utf-8') as f:
                 linhas = f.readlines()[1:]
@@ -62,11 +65,14 @@ def analisar_experimentos(caso):
                 if total > 0:
                     acc_teste = acertos / total
 
-        # calcula acurácia no conjunto autoral
-        acc_autoral = 0.0
-        caminho_autoral = os.path.join(caminho_pasta, "saidas_letras_autoral.csv")
-        if os.path.exists(caminho_autoral):
-            with open(caminho_autoral, 'r', encoding='utf-8') as f:
+        # calcula acurácia no conjunto ruidoso
+        # Tenta primeiro na nova estrutura (ruidoso/), depois na raiz (legado)
+        acc_ruidoso = 0.0
+        caminho_ruidoso = os.path.join(caminho_pasta, "ruidoso", "saidas_ruidoso.csv")
+        if not os.path.exists(caminho_ruidoso):
+            caminho_ruidoso = os.path.join(caminho_pasta, "saidas_letras_autoral.csv")
+        if os.path.exists(caminho_ruidoso):
+            with open(caminho_ruidoso, 'r', encoding='utf-8') as f:
                 linhas = f.readlines()[1:]
                 total, acertos = 0, 0
                 for linha in linhas:
@@ -76,12 +82,14 @@ def analisar_experimentos(caso):
                         if partes[0].upper() == partes[1].upper():
                             acertos += 1
                 if total > 0:
-                    acc_autoral = acertos / total
+                    acc_ruidoso = acertos / total
 
         # extrai épocas executadas e erro final do histórico de erros
         erro_final = float('inf')
         epocas_executadas = 0
-        caminho_erros = os.path.join(caminho_pasta, "historico_erros.csv")
+        caminho_erros = os.path.join(caminho_pasta, "historico_erros_original.csv")
+        if not os.path.exists(caminho_erros):
+            caminho_erros = os.path.join(caminho_pasta, "historico_erros.csv")
         if os.path.exists(caminho_erros):
             with open(caminho_erros, 'r', encoding='utf-8') as f:
                 linhas = [l.strip() for l in f.readlines() if l.strip()]
@@ -106,7 +114,7 @@ def analisar_experimentos(caso):
             "max_epocas": int(max_epocas),
             "erro_minimo": float(erro_min),
             "acc_teste": acc_teste,
-            "acc_autoral": acc_autoral,
+            "acc_ruidoso": acc_ruidoso,
             "erro_final": erro_final,
             "epocas": epocas_executadas
         })
@@ -129,13 +137,14 @@ def analisar_experimentos(caso):
 
     print(f"🏆 Melhor exp_{campeao['id']} (Acc: {campeao['acc_teste']*100:.2f}%). Salvando em '{pasta_destino}'...")
 
-    arquivos_copiados = []
-    for arquivo in os.listdir(pasta_origem):
-        origem_completa = os.path.join(pasta_origem, arquivo)
-        destino_completo = os.path.join(pasta_destino, arquivo)
-        if os.path.isfile(origem_completa):
+    # Copia toda a estrutura do experimento (incluindo subpastas original/ e ruidoso/)
+    for item in os.listdir(pasta_origem):
+        origem_completa = os.path.join(pasta_origem, item)
+        destino_completo = os.path.join(pasta_destino, item)
+        if os.path.isdir(origem_completa):
+            shutil.copytree(origem_completa, destino_completo)
+        elif os.path.isfile(origem_completa):
             shutil.copy2(origem_completa, destino_completo)
-            arquivos_copiados.append(arquivo)
 
     # gera arquivo resumo com os hiperparâmetros vencedores do caso
     caminho_salvamento = os.path.join(pasta_destino, f"hiperparametros_vencedores_caso_{caso}.txt")
@@ -151,7 +160,7 @@ def analisar_experimentos(caso):
         f.write(f"  - Erro Mínimo Estipulado         : {campeao['erro_minimo']}\n\n")
         f.write("--- Métricas Finais Alcançadas ---\n")
         f.write(f"  - Acurácia Final (Conjunto Teste) : {campeao['acc_teste']*100:.2f}%\n")
-        f.write(f"  - Acurácia Final (Base Autoral)   : {campeao['acc_autoral']*100:.2f}%\n")
+        f.write(f"  - Acurácia Final (Base Ruidosa)   : {campeao['acc_ruidoso']*100:.2f}%\n")
         f.write(f"  - Épocas Executadas até a Parada  : {campeao['epocas']}\n")
         # Previne quebra de string caso o erro seja infinito (inf)
         f.write(f"  - Erro Quadrático Médio Final     : {campeao['erro_final']}\n")

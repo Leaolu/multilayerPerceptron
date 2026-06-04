@@ -1,0 +1,5 @@
+=== Resultado do Teste Ruidoso ===
+Erro Quadrático Médio: 0.557429
+Acurácia Alcançada   : 18.46%
+Quantidade de Amostras: 130
+Tempo de Execução (inferência+avaliação ruidosa): 1.5842s

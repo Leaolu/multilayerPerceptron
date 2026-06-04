@@ -2,15 +2,15 @@
   HIPERPARÂMETROS FINAIS DA ARQUITETURA - MULTICLASSE (ALFABETO A-Z) 
 ===================================================================
 
-Melhor Experimento: exp_78
+Melhor Experimento: exp_90
 --- Hiperparâmetros Selecionados ---
   - Neurônios Ocultos (Hidden)     : 50
-  - Taxa de Aprendizado (Alpha)    : 0.01
-  - Limite Máximo de Épocas        : 1500
+  - Taxa de Aprendizado (Alpha)    : 0.05
+  - Limite Máximo de Épocas        : 2000
   - Erro Mínimo Estipulado         : 0.005
 
 --- Métricas Finais Alcançadas ---
-  - Acurácia Final (Conjunto Teste) : 76.15%
-  - Acurácia Final (Base Autoral)   : 26.92%
-  - Épocas Executadas até a Parada  : 834
-  - Erro Quadrático Médio Final     : 0.16263221531967031
+  - Acurácia Final (Conjunto Teste) : 78.46%
+  - Acurácia Final (Base Ruidosa)   : 28.46%
+  - Épocas Executadas até a Parada  : 404
+  - Erro Quadrático Médio Final     : 0.15541265650464542

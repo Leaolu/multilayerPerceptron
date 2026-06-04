@@ -15,12 +15,17 @@ def analisar_resultados():
     with open(arquivo_csv, "r") as f:
         reader = csv.DictReader(f)
         for linha in reader:
+            # Compatibilidade: aceita tanto o formato novo quanto o legado
+            if 'Tempo_Original_Segundos' in linha:
+                tempo = float(linha['Tempo_Original_Segundos'])
+            else:
+                tempo = float(linha['Tempo_Segundos'])
             dados.append({
                 'exp': linha['Experimento'],
                 'caso': linha['Caso'],
                 'hidden': int(linha['Camada_Oculta']),
                 'epocas': int(linha['Max_Epocas']),
-                'tempo': float(linha['Tempo_Segundos'])
+                'tempo': tempo
             })
 
     # Analisando apenas o Caso 0 (Completo) para os gráficos de tempo

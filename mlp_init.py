@@ -112,6 +112,77 @@ def carregar_letras_com_curva(caminho_X, caminho_Y):
     return np.array(X), np.array(T)
 
 
+def carregar_caracteres_completo_ruidoso(caminho_X, caminho_Y):
+    # Carrega o dataset RUIDOSO de reconhecimento de caracteres (26 classes, A até Z).
+    # Estrutura idêntica ao dataset original, mas com 130 amostras (5 réplicas × 26 letras)
+    # cada uma com 15% de ruído adicionado aos pixels.
+    X = []
+    with open(caminho_X, 'r') as f:
+        for linha in f:
+            valores = linha.replace(',', ' ').split()
+            if valores:
+                X.append([float(v) for v in valores])
+
+    T = []
+    with open(caminho_Y, 'r') as f:
+        for linha in f:
+            letra = linha.strip().upper()
+            if letra:
+                T.append(ord(letra) - ord('A'))
+
+    return np.array(X), np.array(T)
+
+
+def carregar_letras_com_buraco_ruidoso(caminho_X, caminho_Y):
+    # Carrega o dataset RUIDOSO para classificação binária: letras com buraco vs sem buraco.
+    # 130 amostras (5 réplicas × 26 letras) com 15% de ruído.
+    X = []
+    with open(caminho_X, 'r') as f:
+        for linha in f:
+            valores = linha.replace(',', ' ').split()
+            if valores:
+                X.append([float(v) for v in valores])
+
+    T = []
+    letras_com_buraco = {'A', 'B', 'D', 'O', 'P', 'Q', 'R'}
+
+    with open(caminho_Y, 'r') as f:
+        for linha in f:
+            letra = linha.strip().upper()
+            if letra:
+                if letra in letras_com_buraco:
+                    T.append(1)
+                else:
+                    T.append(0)
+
+    return np.array(X), np.array(T)
+
+
+def carregar_letras_com_curva_ruidoso(caminho_X, caminho_Y):
+    # Carrega o dataset RUIDOSO para classificação binária: letras com curva vs sem curva.
+    # 130 amostras (5 réplicas × 26 letras) com 15% de ruído.
+    X = []
+    with open(caminho_X, 'r') as f:
+        for linha in f:
+            valores = linha.replace(',', ' ').split()
+            if valores:
+                X.append([float(v) for v in valores])
+
+    T = []
+    letras_com_curva = {'B', 'C', 'D', 'G', 'J', 'O', 'P', 'Q', 'R', 'S', 'U'}
+
+    with open(caminho_Y, 'r') as f:
+        for linha in f:
+            letra = linha.strip().upper()
+            if letra:
+                if letra in letras_com_curva:
+                    T.append(1)
+                else:
+                    T.append(0)
+
+    return np.array(X), np.array(T)
+
+
 def dividir_dados(X, T, qtd_teste=130, qtd_val=130):
     # Divide o dataset em três conjuntos: treino, validação e teste.
     # A validação é usada para monitorar o erro durante o treinamento

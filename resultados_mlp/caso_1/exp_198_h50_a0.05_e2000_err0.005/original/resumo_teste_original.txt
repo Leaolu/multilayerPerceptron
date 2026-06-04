@@ -1,0 +1,5 @@
+=== Resultado do Teste Original ===
+Erro Quadrático Médio: 0.094492
+Acurácia Alcançada   : 87.69%
+Quantidade de Amostras: 130
+Tempo de Execução (treino+val+teste): 2.7251s

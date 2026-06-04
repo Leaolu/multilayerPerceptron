@@ -2,15 +2,15 @@
   HIPERPARÂMETROS FINAIS DA ARQUITETURA - BINÁRIO (LETRAS COM CURVA) 
 ===================================================================
 
-Melhor Experimento: exp_224
+Melhor Experimento: exp_299
 --- Hiperparâmetros Selecionados ---
-  - Neurônios Ocultos (Hidden)     : 15
-  - Taxa de Aprendizado (Alpha)    : 0.01
-  - Limite Máximo de Épocas        : 2000
+  - Neurônios Ocultos (Hidden)     : 50
+  - Taxa de Aprendizado (Alpha)    : 0.05
+  - Limite Máximo de Épocas        : 1000
   - Erro Mínimo Estipulado         : 0.01
 
 --- Métricas Finais Alcançadas ---
   - Acurácia Final (Conjunto Teste) : 93.85%
-  - Acurácia Final (Base Autoral)   : 80.77%
-  - Épocas Executadas até a Parada  : 132
-  - Erro Quadrático Médio Final     : 0.05662147489957533
+  - Acurácia Final (Base Ruidosa)   : 66.92%
+  - Épocas Executadas até a Parada  : 29
+  - Erro Quadrático Médio Final     : 0.0500587017470009

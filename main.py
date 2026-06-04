@@ -1,6 +1,6 @@
 # codigo principal para treinamento e avaliação do MLP
 # Orquestra o pipeline completo: carregamento de dados, inicialização,
-# treinamento com parada antecipada, avaliação no teste e teste autoral.
+# treinamento com parada antecipada, avaliação no teste e teste ruidoso.
 # slide 68 - Fausett: visão geral do algoritmo de treinamento do MLP.
 import numpy as np
 import argparse
@@ -8,10 +8,12 @@ import os
 import time
 from mlp_init import (inicializar_pesos, carregar_dataset_csv, carregar_caracteres_completo,
                       dividir_dados, salvar_historico_erro, salvar_pesos,
-                      carregar_letras_com_buraco, carregar_letras_com_curva)
+                      carregar_letras_com_buraco, carregar_letras_com_curva,
+                      carregar_caracteres_completo_ruidoso, carregar_letras_com_buraco_ruidoso, 
+                      carregar_letras_com_curva_ruidoso)
 from mlp_forward import inferencia
 from mlp_treino import treinar, calcular_erro_conjunto
-from mlp_avaliacao import matriz_confusao, acuracia, plotar_curva_erro, salvar_saidas_teste, salvar_matriz_confusao, plotar_analise_completa_slides
+from mlp_avaliacao import matriz_confusao, acuracia, salvar_saidas_teste, salvar_matriz_confusao, plotar_analise_completa_slides, gerar_imagem_matriz_confusao
 
 
 def converter_para_one_hot(T, n_classes):
@@ -47,6 +49,10 @@ def main():
     print("\n--- Inicializando Rede Neural MLP ---")
     caso = args.caso
 
+    # Criar diretórios de saída para original e ruidoso
+    os.makedirs("original", exist_ok=True)
+    os.makedirs("ruidoso", exist_ok=True)
+
     # Carregamento do dataset conforme o caso selecionado.
     # Ref: slides 41-43 - Fausett: reconhecimento de caracteres como
     # problema de classificação com rede neural.
@@ -75,14 +81,14 @@ def main():
     T_val_one_hot = converter_para_one_hot(T_val, n_saidas)
     T_teste_one_hot = converter_para_one_hot(T_teste, n_saidas)
 
-    # Carregamento antecipado do Autoral para geração do Gráfico de Slide
-    X_aut, T_aut_one_hot = None, None
+    # Carregamento antecipado do Ruidoso para geração do Gráfico de Slide
+    X_rud, T_rud_one_hot = None, None
     try:
-        if caso == 1: X_aut_temp, T_aut_temp = carregar_letras_com_buraco("X_autoral.txt", "Y_autoral.txt")
-        elif caso == 2: X_aut_temp, T_aut_temp = carregar_letras_com_curva("X_autoral.txt", "Y_autoral.txt")
-        else: X_aut_temp, T_aut_temp = carregar_caracteres_completo("X_autoral.txt", "Y_autoral.txt")
-        X_aut = X_aut_temp
-        T_aut_one_hot = converter_para_one_hot(T_aut_temp, n_saidas)
+        if caso == 1: X_rud_temp, T_rud_temp = carregar_letras_com_buraco_ruidoso("X_ruidoso.txt", "Y_ruidoso.txt")
+        elif caso == 2: X_rud_temp, T_rud_temp = carregar_letras_com_curva_ruidoso("X_ruidoso.txt", "Y_ruidoso.txt")
+        else: X_rud_temp, T_rud_temp = carregar_caracteres_completo_ruidoso("X_ruidoso.txt", "Y_ruidoso.txt")
+        X_rud = X_rud_temp
+        T_rud_one_hot = converter_para_one_hot(T_rud_temp, n_saidas)
     except FileNotFoundError:
         pass
 
@@ -100,85 +106,115 @@ def main():
         f.write(f"Taxa de Aprendizado: {alpha} | Paciencia (Early Stop): {paciencia}\n")
         f.write(f"Maximo Epocas: {max_epocas} | Erro Minimo: {erro_minimo}\n")
 
-    # Início da Cronometragem e Execução do treinamento
+    # =========================================================================
+    # TREINAMENTO + TESTE ORIGINAL
+    # Cronometragem cobre: treinamento, validação e avaliação no teste original
+    # =========================================================================
     tempo_inicio = time.time()
     print("Iniciando treinamento...")
-    v, v0, w, w0, erros_treino, erros_val, erros_teste, erros_aut, p_v, p_w = treinar(X_treino, T_treino_one_hot, X_val, T_val_one_hot, X_teste, T_teste_one_hot, X_aut, T_aut_one_hot, v, v0, w, w0, alpha, max_epocas, erro_minimo, paciencia)
-    
-    tempo_execucao = time.time() - tempo_inicio
-    with open("tempo_execucao.txt", "w") as f_tempo:
-        f_tempo.write(f"{tempo_execucao:.4f}")
+    v, v0, w, w0, erros_treino, erros_val, erros_teste, erros_rud, p_v, p_w = treinar(
+        X_treino, T_treino_one_hot, X_val, T_val_one_hot, X_teste, T_teste_one_hot,
+        X_rud, T_rud_one_hot, v, v0, w, w0, alpha, max_epocas, erro_minimo, paciencia
+    )
 
-    plotar_analise_completa_slides(erros_treino, erros_val, erros_teste, erros_aut, p_v, p_w)
-
-    salvar_pesos(v, v0, w, w0, "pesos_finais.txt")
-    salvar_historico_erro(erros_treino, "historico_erros.csv", erros_val)
-
-    # uso da rede treinada no conjunto de teste (slide 80 - Fausett):
+    # Uso da rede treinada no conjunto de teste (slide 80 - Fausett):
     # pega os pesos obtidos e executa feedforward para cada padrão de teste
     T_predito_ints = inferencia(X_teste, v, v0, w, w0)
     acc = acuracia(T_teste, T_predito_ints)
+    erro_medio_teste = calcular_erro_conjunto(X_teste, T_teste_one_hot, v, v0, w, w0)
+
+    tempo_execucao_original = time.time() - tempo_inicio
+    with open("tempo_execucao_original.txt", "w") as f_tempo:
+        f_tempo.write(f"{tempo_execucao_original:.4f}")
+
+    # Gráfico de análise completa (substitui o antigo curva_erro.png)
+    plotar_analise_completa_slides(erros_treino, erros_val, erros_teste, erros_rud, p_v, p_w)
+
+    salvar_pesos(v, v0, w, w0, "pesos_finais.txt")
+    salvar_historico_erro(erros_treino, "historico_erros_original.csv", erros_val)
 
     # Gera e salva a matriz de confusão do conjunto de teste principal
     matriz_teste = matriz_confusao(T_teste, T_predito_ints, n_saidas)
-    salvar_matriz_confusao(matriz_teste, "matriz_confusao_teste.csv")
+    salvar_matriz_confusao(matriz_teste, "original/matriz_confusao_teste.csv")
+    gerar_imagem_matriz_confusao(matriz_teste, "original/matriz_confusao_teste.png", caso=caso)
 
     epocas_executadas = len(erros_treino)
     erro_final = erros_treino[-1]
 
     print(f"\nResultados: Épocas={epocas_executadas} | Erro Treino Final={erro_final:.4f} | Acurácia no Teste={acc*100:.2f}%")
-    print("\nMatriz de Confusão (Conjunto de Teste):")
+    print("\nMatriz de Confusão (Conjunto de Teste Original):")
     print(matriz_teste)
 
     T_teste_letras = mapear_saida_para_texto(T_teste, caso)
     T_predito_letras = mapear_saida_para_texto(T_predito_ints, caso)
-    salvar_saidas_teste(X_teste, T_teste_letras, T_predito_letras, "saidas_teste.csv")
+    salvar_saidas_teste(X_teste, T_teste_letras, T_predito_letras, "original/saidas_teste.csv")
 
-    # TESTE EXTRA: VARIAÇÃO AUTORAL
-    # Avalia a rede treinada em um conjunto de dados com ruído feito por nós,
-    # verificando a capacidade de generalização do modelo em um caso mais real
+    # Cria resumo do teste original
+    with open("original/resumo_teste_original.txt", "w") as f_resumo:
+        f_resumo.write("=== Resultado do Teste Original ===\n")
+        f_resumo.write(f"Erro Quadrático Médio: {erro_medio_teste:.6f}\n")
+        f_resumo.write(f"Acurácia Alcançada   : {acc*100:.2f}%\n")
+        f_resumo.write(f"Quantidade de Amostras: {len(X_teste)}\n")
+        f_resumo.write(f"Tempo de Execução (treino+val+teste): {tempo_execucao_original:.4f}s\n")
+
+    # =========================================================================
+    # TESTE EXTRA: VARIAÇÃO RUIDOSA
+    # (130 amostras: 5 réplicas × 26 letras, cada uma com ruído diferente)
+    # Avalia a rede treinada em um conjunto de dados com ruído,
+    # verificando a capacidade de generalização do modelo em um caso mais real.
+    # Cronometragem separada: apenas tempo de inferência + avaliação ruidosa.
+    # =========================================================================
     try:
-        print("\n--- Teste de Variação Autoral ---")
+        print("\n--- Teste de Variação Ruidosa ---")
+        
+        tempo_rud_inicio = time.time()
 
         if caso == 1:
-            X_aut_final, T_aut_final = carregar_letras_com_buraco("X_autoral.txt", "Y_autoral.txt")
+            X_rud_final, T_rud_final = carregar_letras_com_buraco_ruidoso("X_ruidoso.txt", "Y_ruidoso.txt")
         elif caso == 2:
-            X_aut_final, T_aut_final = carregar_letras_com_curva("X_autoral.txt", "Y_autoral.txt")
+            X_rud_final, T_rud_final = carregar_letras_com_curva_ruidoso("X_ruidoso.txt", "Y_ruidoso.txt")
         else:
-            X_aut_final, T_aut_final = carregar_caracteres_completo("X_autoral.txt", "Y_autoral.txt")
+            X_rud_final, T_rud_final = carregar_caracteres_completo_ruidoso("X_ruidoso.txt", "Y_ruidoso.txt")
 
-        T_aut_final_one_hot = converter_para_one_hot(T_aut_final, n_classes=n_saidas)
+        T_rud_final_one_hot = converter_para_one_hot(T_rud_final, n_classes=n_saidas)
 
-        erro_medio_aut_final = calcular_erro_conjunto(X_aut_final, T_aut_final_one_hot, v, v0, w, w0)
+        erro_medio_rud_final = calcular_erro_conjunto(X_rud_final, T_rud_final_one_hot, v, v0, w, w0)
 
-        T_predito_aut_ints = inferencia(X_aut_final, v, v0, w, w0)
-        acc_autoral = acuracia(T_aut_final, T_predito_aut_ints)
+        T_predito_rud_ints = inferencia(X_rud_final, v, v0, w, w0)
+        acc_ruidoso = acuracia(T_rud_final, T_predito_rud_ints)
 
-        # Gera e salva a matriz de confusão do conjunto autoral
-        matriz_autoral = matriz_confusao(T_aut_final, T_predito_aut_ints, n_saidas)
-        salvar_matriz_confusao(matriz_autoral, "matriz_confusao_autoral.csv")
+        # Gera e salva a matriz de confusão do conjunto ruidoso
+        matriz_ruidoso = matriz_confusao(T_rud_final, T_predito_rud_ints, n_saidas)
+        salvar_matriz_confusao(matriz_ruidoso, "ruidoso/matriz_confusao_ruidoso.csv")
+        gerar_imagem_matriz_confusao(matriz_ruidoso, "ruidoso/matriz_confusao_ruidoso.png", caso=caso)
+        
+        tempo_execucao_ruidoso = time.time() - tempo_rud_inicio
+        with open("tempo_execucao_ruidoso.txt", "w") as f_tempo_rud:
+            f_tempo_rud.write(f"{tempo_execucao_ruidoso:.4f}")
 
-        print(f"Erro Médio no conjunto AUTORAL: {erro_medio_aut_final:.6f}")
-        print(f"Acurácia no conjunto AUTORAL: {acc_autoral*100:.2f}%")
-        print("\nMatriz de Confusão (Conjunto Autoral):")
-        print(matriz_autoral)
+        print(f"Erro Médio no conjunto RUIDOSO: {erro_medio_rud_final:.6f}")
+        print(f"Acurácia no conjunto RUIDOSO: {acc_ruidoso*100:.2f}%")
+        print("\nMatriz de Confusão (Conjunto Ruidoso):")
+        print(matriz_ruidoso)
 
-        with open("resumo_teste_autoral.txt", "w") as f_resumo:
-            f_resumo.write("=== Resultado do Teste Autoral ===\n")
-            f_resumo.write(f"Erro Quadrático Médio: {erro_medio_aut_final:.6f}\n")
-            f_resumo.write(f"Acurácia Alcançada   : {acc_autoral*100:.2f}%\n")
-            f_resumo.write(f"Quantidade de Amostras: {len(X_aut_final)}\n")
+        with open("ruidoso/resumo_teste_ruidoso.txt", "w") as f_resumo:
+            f_resumo.write("=== Resultado do Teste Ruidoso ===\n")
+            f_resumo.write(f"Erro Quadrático Médio: {erro_medio_rud_final:.6f}\n")
+            f_resumo.write(f"Acurácia Alcançada   : {acc_ruidoso*100:.2f}%\n")
+            f_resumo.write(f"Quantidade de Amostras: {len(X_rud_final)}\n")
+            f_resumo.write(f"Tempo de Execução (inferência+avaliação ruidosa): {tempo_execucao_ruidoso:.4f}s\n")
 
-        T_aut_letras = mapear_saida_para_texto(T_aut_final, caso)
-        T_predito_aut_letras = mapear_saida_para_texto(T_predito_aut_ints, caso)
-        salvar_saidas_teste(X_aut_final, T_aut_letras, T_predito_aut_letras, "saidas_letras_autoral.csv")
+        T_rud_letras = mapear_saida_para_texto(T_rud_final, caso)
+        T_predito_rud_letras = mapear_saida_para_texto(T_predito_rud_ints, caso)
+        salvar_saidas_teste(X_rud_final, T_rud_letras, T_predito_rud_letras, "ruidoso/saidas_ruidoso.csv")
+        
+        # Salva histórico de erros para o ruidoso (erro por época durante treinamento)
+        salvar_historico_erro(erros_rud if erros_rud else [], "historico_erros_ruidoso.csv")
 
-        print("Resultados gravados em 'resumo_teste_autoral.txt' e 'saidas_letras_autoral.csv'")
+        print("Resultados gravados em 'ruidoso/resumo_teste_ruidoso.txt' e 'ruidoso/saidas_ruidoso.csv'")
 
     except FileNotFoundError:
-        print("\n[Aviso] Arquivos autorais não encontrados. Rode o 'gerar_ruido.py' primeiro se desejar este teste.")
-
-    plotar_curva_erro(erros_treino, erros_val)
+        print("\n[Aviso] Arquivos ruidosos não encontrados. Rode o 'gerar_ruido.py' primeiro se desejar este teste.")
 
 if __name__ == "__main__":
     main()

@@ -72,7 +72,7 @@ def treinar(X_treino, T_treino_one_hot, X_val, T_val_one_hot, X_teste, T_teste_o
         erro_medio_val = calcular_erro_conjunto(X_val, T_val_one_hot, v, v0, w, w0)
         historico_erros_val.append(erro_medio_val)
         
-        # Avaliação nos conjuntos de teste e autoral para análise dos slides
+        # Avaliação nos conjuntos de teste e ruidoso para análise dos slides
         erro_medio_teste = calcular_erro_conjunto(X_teste, T_teste_one_hot, v, v0, w, w0)
         historico_erros_teste.append(erro_medio_teste)
         

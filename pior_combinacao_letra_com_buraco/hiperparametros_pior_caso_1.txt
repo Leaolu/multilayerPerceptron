@@ -1,0 +1,19 @@
+===================================================================
+  HIPERPARÂMETROS - PIOR DESEMPENHO - BINÁRIO (LETRAS COM BURACO) 
+===================================================================
+
+Pior Experimento: exp_139
+--- Hiperparâmetros da Configuração ---
+  - Neurônios Ocultos (Hidden)     : 15
+  - Taxa de Aprendizado (Alpha)    : 0.2
+  - Limite Máximo de Épocas        : 1500
+  - Erro Mínimo Estipulado         : 0.05
+
+--- Métricas Alcançadas (Pior Performance) ---
+  - Acurácia Alcançada (Teste)     : 76.92%
+  - Acurácia Alcançada (Ruidoso)   : 70.00%
+  - Épocas Executadas até Parada   : 4
+  - Erro Quadrático Médio Final    : 0.11280272159667605
+
+[NOTA] Este modelo representa a pior combinação de hiperparâmetros,
+    útil para análise contrastante com a melhor combinação.

@@ -3,6 +3,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
+try:
+    import seaborn as sns
+    HAS_SEABORN = True
+except ImportError:
+    HAS_SEABORN = False
 
 
 def matriz_confusao(T_real, T_predito, n_classes):
@@ -20,28 +25,6 @@ def acuracia(T_real, T_predito):
     corretos = np.sum(np.array(T_real) == np.array(T_predito))
     return corretos / len(T_real)
 
-
-def plotar_curva_erro(historico_erros_treino, historico_erros_val=None):
-    # Plota a curva de erro quadrático médio ao longo das épocas.
-    # slide 82, Haykin: a parada antecipada monitora o erro de
-    # validação.
-    # A visualização das duas curvas (treino vs validação) permite
-    # identificar esse ponto de divergência.
-    plt.figure(figsize=(8, 6))
-
-    plt.plot(range(1, len(historico_erros_treino) + 1), historico_erros_treino, color='b', label='Treino')
-
-    if historico_erros_val is not None:
-        plt.plot(range(1, len(historico_erros_val) + 1), historico_erros_val, color='r', label='Validação')
-
-    plt.title('Curva de Erro do Treinamento vs Validação (Early Stopping)')
-    plt.xlabel('Época')
-    plt.ylabel('Erro Quadrático Médio')
-    plt.legend()
-    plt.grid(True)
-
-    plt.savefig('curva_erro.png', bbox_inches='tight')
-    plt.close()
 
 
 def salvar_saidas_teste(X_teste, T_real, T_predito, caminho):
@@ -65,7 +48,52 @@ def salvar_matriz_confusao(matriz, caminho):
             writer.writerow(linha)
 
 
-def plotar_analise_completa_slides(erros_treino, erros_val, erros_teste, erros_autoral, pesos_v, pesos_w):
+def gerar_imagem_matriz_confusao(matriz, caminho_png, caso=0):
+    # Gera uma visualização em PNG da matriz de confusão com labels legíveis.
+    # caso: 0 para multiclasse (A-Z), 1-2 para binário (0-1)
+    n_classes = matriz.shape[0]
+    
+    # Criar labels conforme o caso
+    if caso == 0:
+        labels = [chr(ord('A') + i) for i in range(n_classes)]
+    else:
+        labels = [str(i) for i in range(n_classes)]
+    
+    # Criar figura com tamanho apropriado
+    fig_size = max(8, n_classes * 0.6)
+    fig, ax = plt.subplots(figsize=(fig_size, fig_size))
+    
+    # Usar seaborn se disponível para melhor aparência
+    if HAS_SEABORN:
+        sns.heatmap(matriz, annot=True, fmt='d', cmap='Blues', 
+                   xticklabels=labels, yticklabels=labels, 
+                   cbar_kws={'label': 'Quantidade'}, ax=ax)
+    else:
+        # Fallback: usar matplotlib com imshow
+        im = ax.imshow(matriz, interpolation='nearest', cmap='Blues')
+        plt.colorbar(im, ax=ax, label='Quantidade')
+        ax.set_xticks(np.arange(n_classes))
+        ax.set_yticks(np.arange(n_classes))
+        ax.set_xticklabels(labels)
+        ax.set_yticklabels(labels)
+        
+        # Adicionar anotações manualmente se não houver seaborn
+        for i in range(n_classes):
+            for j in range(n_classes):
+                text = ax.text(j, i, matriz[i, j], ha="center", va="center", 
+                             color="white" if matriz[i, j] > matriz.max() / 2 else "black",
+                             fontsize=max(6, 12 - n_classes // 5))
+    
+    ax.set_xlabel('Classe Predita', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Classe Real', fontsize=12, fontweight='bold')
+    ax.set_title('Matriz de Confusão', fontsize=14, fontweight='bold', pad=20)
+    
+    plt.tight_layout()
+    plt.savefig(caminho_png, bbox_inches='tight', dpi=150)
+    plt.close()
+
+
+def plotar_analise_completa_slides(erros_treino, erros_val, erros_teste, erros_ruidoso, pesos_v, pesos_w):
     # Função para gerar gráficos exclusivos da Apresentação
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
     epocas = range(1, len(erros_treino) + 1)
@@ -74,8 +102,8 @@ def plotar_analise_completa_slides(erros_treino, erros_val, erros_teste, erros_a
     ax1.plot(epocas, erros_treino, 'b-', label='Treino')
     if erros_val: ax1.plot(epocas, erros_val, 'r--', label='Validação')
     if erros_teste: ax1.plot(epocas, erros_teste, 'g:', label='Teste')
-    if erros_autoral and erros_autoral[0] is not None: 
-        ax1.plot(epocas, erros_autoral, 'm-.', label='Ruído/Autoral')
+    if erros_ruidoso and erros_ruidoso[0] is not None: 
+        ax1.plot(epocas, erros_ruidoso, 'm-.', label='Ruidoso')
         
     ax1.set_title('Convergência do Erro (Parada Antecipada)')
     ax1.set_xlabel('Época')

@@ -1,0 +1,19 @@
+===================================================================
+  HIPERPARÂMETROS - PIOR DESEMPENHO - MULTICLASSE (ALFABETO A-Z) 
+===================================================================
+
+Pior Experimento: exp_16
+--- Hiperparâmetros da Configuração ---
+  - Neurônios Ocultos (Hidden)     : 15
+  - Taxa de Aprendizado (Alpha)    : 0.05
+  - Limite Máximo de Épocas        : 2000
+  - Erro Mínimo Estipulado         : 0.05
+
+--- Métricas Alcançadas (Pior Performance) ---
+  - Acurácia Alcançada (Teste)     : 53.08%
+  - Acurácia Alcançada (Ruidoso)   : 21.54%
+  - Épocas Executadas até Parada   : 193
+  - Erro Quadrático Médio Final    : 0.22334769821136732
+
+[NOTA] Este modelo representa a pior combinação de hiperparâmetros,
+    útil para análise contrastante com a melhor combinação.
