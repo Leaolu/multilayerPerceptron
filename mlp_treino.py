@@ -29,61 +29,60 @@ def atualizar_pesos(v, v0, w, w0, delta_v, delta_v0, delta_w, delta_w0):
 def calcular_erro_conjunto(X, T_one_hot, v, v0, w, w0):
     # Calcula o erro quadrático médio para um conjunto de dados (validação ou teste)
     # sem atualizar pesos.
-    # Eav = (1/N) * sum_n(E(n))
-    # slide 55, Haykin: o erro quadratico médio é a função custo para
-    # o conjunto de treinamento e é uma medida de desempenho do aprendizado.
     erro_total = 0.0
-    N = len(X)
-    for i in range(N):
+    for i in range(len(X)):
         _, _, _, y = forward(X[i], v, v0, w, w0)
         erro_total += calcular_erro(T_one_hot[i], y)
-    return erro_total / N
+    return erro_total / len(X)
 
 
-def treinar(X_treino, T_treino_one_hot, X_val, T_val_one_hot, v, v0, w, w0, alpha, max_epocas, erro_minimo, paciencia=20):
-    # Loop principal de treinamento do MLP.
-    # slide 68, Fausett:
-    #   Passo 0: Inicializa pesos, bias, taxa de aprendizado, épocas.
-    #   Passo 1: Enquanto condição de parada é falsa, execute mais uma época.
-    #   Passo 9: Teste condição de parada (erro, taxa de aprendizado ou épocas).
-    # slide 82, Haykin: parada antecipada para evitar
-    # overfitting, monitorando o erro no conjunto de validação (implementação bônus).
+def treinar(X_treino, T_treino_one_hot, X_val, T_val_one_hot, X_teste, T_teste_one_hot, X_aut, T_aut_one_hot, v, v0, w, w0, alpha, max_epocas, erro_minimo, paciencia):
+    # Executa o loop principal (Passos 1 ao 9 do algoritmo, slide 68 - Fausett).
     historico_erros_treino = []
     historico_erros_val = []
-    epoca = 0
-    N = len(X_treino)
+    
+    # Adicionadas variáveis para a geração dos gráficos da apresentação
+    historico_erros_teste = []
+    historico_erros_aut = []
+    convergencia_pesos_v = []
+    convergencia_pesos_w = []
 
     melhor_erro_val = float('inf')
     epocas_sem_melhoria = 0
-
-    # Salva os pesos iniciais como os melhores até agora
+    epoca = 0
+    N = len(X_treino)
+    
     melhor_v, melhor_v0 = copy.deepcopy(v), copy.deepcopy(v0)
     melhor_w, melhor_w0 = copy.deepcopy(w), copy.deepcopy(w0)
 
     while epoca < max_epocas:
-        erro_epoca = 0.0
+        erro_epoca_treino = 0.0
 
-        # Passo de Treinamento: para cada par de treinamento (Passo 2, Fausett),
-        # executa feedforward (Passos 3-5), backpropagation (Passos 6-7) e
-        # atualização de pesos (Passo 8).
-        # slide 56, Haykin: alteração de pesos padrão a padrão,
-        # uma época é a apresentação completa do conjunto de treinamento.
         for i in range(N):
             Xi = X_treino[i]
             ti = T_treino_one_hot[i]
-
             z_in, z, y_in, y = forward(Xi, v, v0, w, w0)
             delta_v, delta_v0, delta_w, delta_w0 = backward(Xi, ti, z, z_in, y, y_in, w, alpha)
             v, v0, w, w0 = atualizar_pesos(v, v0, w, w0, delta_v, delta_v0, delta_w, delta_w0)
 
-            erro_epoca += calcular_erro(ti, y)
-
-        erro_medio_treino = erro_epoca / N
+        erro_medio_treino = calcular_erro_conjunto(X_treino, T_treino_one_hot, v, v0, w, w0)
         historico_erros_treino.append(erro_medio_treino)
 
         # Avaliação no conjunto de validação (sem atualizar pesos)
         erro_medio_val = calcular_erro_conjunto(X_val, T_val_one_hot, v, v0, w, w0)
         historico_erros_val.append(erro_medio_val)
+        
+        # Avaliação nos conjuntos de teste e autoral para análise dos slides
+        erro_medio_teste = calcular_erro_conjunto(X_teste, T_teste_one_hot, v, v0, w, w0)
+        historico_erros_teste.append(erro_medio_teste)
+        
+        if X_aut is not None:
+            historico_erros_aut.append(calcular_erro_conjunto(X_aut, T_aut_one_hot, v, v0, w, w0))
+        else:
+            historico_erros_aut.append(None)
+            
+        convergencia_pesos_v.append(np.mean(np.abs(v)))
+        convergencia_pesos_w.append(np.mean(np.abs(w)))
 
         epoca += 1
 
@@ -102,13 +101,11 @@ def treinar(X_treino, T_treino_one_hot, X_val, T_val_one_hot, v, v0, w, w0, alph
 
         # Condições de Parada (Passo 9, slide 68, Fausett)
         if erro_medio_treino <= erro_minimo:
-            print(f"-> Parada por Erro Mínimo atingido no treino (Época {epoca})")
+            print(f"-> Parada por Erro Mínimo atingido no treino (Época {epoca}).")
             break
-
+            
         if epocas_sem_melhoria >= paciencia:
-            print(f"-> PARADA ANTECIPADA ativada! A validação parou de melhorar na época {epoca}.")
-            print("-> Restaurando os pesos da melhor época...")
-            v, v0, w, w0 = melhor_v, melhor_v0, melhor_w, melhor_w0
+            print(f"-> Parada Antecipada (Early Stopping) acionada na época {epoca}.")
             break
 
-    return v, v0, w, w0, historico_erros_treino, historico_erros_val
+    return melhor_v, melhor_v0, melhor_w, melhor_w0, historico_erros_treino, historico_erros_val, historico_erros_teste, historico_erros_aut, convergencia_pesos_v, convergencia_pesos_w

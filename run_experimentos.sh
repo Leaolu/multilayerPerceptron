@@ -26,7 +26,7 @@ mkdir -p "$DIRETORIO_RAIZ_RESULTADOS"
 
 # Criar o cabeçalho do arquivo de resumo global (ficará na raiz)
 ARQUIVO_RESUMO="${DIRETORIO_RAIZ_RESULTADOS}/resumo_geral_experimentos.csv"
-echo "Experimento,Caso,Camada_Oculta,Alpha,Max_Epocas,Erro_Minimo" > "$ARQUIVO_RESUMO"
+echo "Experimento,Caso,Camada_Oculta,Alpha,Max_Epocas,Erro_Minimo,Tempo_Segundos" > "$ARQUIVO_RESUMO"
 
 TOTAL_EXP=$(( ${#CASOS[@]} * ${#CAMADAS_ESCONDIDAS[@]} * ${#ALPHAS[@]} * ${#MAX_EPOCAS[@]} * ${#ERROS_MINIMOS[@]} ))
 CONTADOR=1
@@ -59,11 +59,17 @@ for c in "${CASOS[@]}"; do
                     PASTA_EXP="${DIRETORIO_CASO}/exp_${CONTADOR}_h${h}_a${a}_e${e}_err${err}"
                     mkdir -p "$PASTA_EXP"
                     
-                    # Alimenta o arquivo de resumo geral adicionando a coluna do Caso
-                    echo "exp_${CONTADOR},${c},${h},${a},${e},${err}" >> "$ARQUIVO_RESUMO"
-                    
                     # Executa o Python passando as variações atuais E O NOVO ARGUMENTO --caso
                     python3 "$PYTHON_SCRIPT" --n_escondidos "$h" --alpha "$a" --max_epocas "$e" --erro_minimo "$err" --caso "$c"
+                    
+                    if [ -f "tempo_execucao.txt" ]; then
+                        TEMPO=$(cat tempo_execucao.txt)
+                    else
+                        TEMPO="0.0"
+                    fi
+                    
+                    # Alimenta o arquivo de resumo geral adicionando a coluna do Caso e o Tempo
+                    echo "exp_${CONTADOR},${c},${h},${a},${e},${err},${TEMPO}" >> "$ARQUIVO_RESUMO"
                     
                     echo -e "${AMARELO}-> Isolando arquivos gerados na pasta do experimento...${NC}"
                     
@@ -73,16 +79,13 @@ for c in "${CASOS[@]}"; do
                     [ -f "pesos_finais.txt" ]    && mv "pesos_finais.txt" "$PASTA_EXP/"
                     [ -f "historico_erros.csv" ] && mv "historico_erros.csv" "$PASTA_EXP/"
                     [ -f "saidas_teste.csv" ]    && mv "saidas_teste.csv" "$PASTA_EXP/"
+                    [ -f "matriz_confusao_teste.csv" ] && mv "matriz_confusao_teste.csv" "$PASTA_EXP/"
+                    [ -f "tempo_execucao.txt" ] && mv "tempo_execucao.txt" "$PASTA_EXP/"
                     
                     # 2. MOVE os resultados do teste autoral
                     [ -f "resumo_teste_autoral.txt" ] && mv "resumo_teste_autoral.txt" "$PASTA_EXP/"
                     [ -f "saidas_letras_autoral.csv" ] && mv "saidas_letras_autoral.csv" "$PASTA_EXP/"
-
-                    # 2b. MOVE as matrizes de confusão (teste e autoral)
-                    [ -f "matriz_confusao_teste.csv" ] && mv "matriz_confusao_teste.csv" "$PASTA_EXP/"
-                    [ -f "matriz_confusao_teste.png" ] && mv "matriz_confusao_teste.png" "$PASTA_EXP/"
                     [ -f "matriz_confusao_autoral.csv" ] && mv "matriz_confusao_autoral.csv" "$PASTA_EXP/"
-                    [ -f "matriz_confusao_autoral.png" ] && mv "matriz_confusao_autoral.png" "$PASTA_EXP/"
 
                     # 3. COPIA os arquivos da base de dados autoral
                     [ -f "X_autoral.txt" ] && cp "X_autoral.txt" "$PASTA_EXP/"
@@ -91,6 +94,9 @@ for c in "${CASOS[@]}"; do
                     # 4. Solução do gráfico
                     if [ -f "curva_erro.png" ]; then
                         mv "curva_erro.png" "${PASTA_EXP}/curva_erro_exp_${CONTADOR}.png"
+                    fi
+                    if [ -f "grafico_analise_completa.png" ]; then
+                        mv "grafico_analise_completa.png" "${PASTA_EXP}/grafico_analise_completa_exp_${CONTADOR}.png"
                     fi
 
                     CONTADOR=$((CONTADOR + 1))
@@ -101,6 +107,12 @@ for c in "${CASOS[@]}"; do
     echo -e "${VERDE}-> Extraindo a melhor combinação para o Caso ${c}...${NC}"
     python3 melhor_combinacao.py --caso "$c"
 done
+
+echo ""
+echo -e "${AMARELO}==========================================================${NC}"
+echo -e "${AMARELO} Gerando gráficos finais de análise para a apresentação...${NC}"
+echo -e "${AMARELO}==========================================================${NC}"
+python3 analise_geral_graficos.py
 
 echo ""
 echo -e "${VERDE}==========================================================${NC}"

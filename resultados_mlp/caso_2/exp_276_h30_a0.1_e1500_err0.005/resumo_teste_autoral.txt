@@ -1,4 +1,4 @@
 === Resultado do Teste Autoral ===
-Erro Quadrático Médio: 0.246747
+Erro Quadrático Médio: 0.210661
 Acurácia Alcançada   : 69.23%
 Quantidade de Amostras: 26

@@ -44,46 +44,6 @@ def plotar_curva_erro(historico_erros_treino, historico_erros_val=None):
     plt.close()
 
 
-def salvar_matriz_confusao(T_real, T_predito, n_classes, rotulos, caminho_csv, caminho_png, titulo="Matriz de Confusão"):
-    # Persiste a matriz de confusão em dois formatos:
-    #  - CSV: para inspeção textual e processamento posterior.
-    #  - PNG: heatmap para visualização rápida (usado no vídeo de apresentação).
-    # rotulos: lista de strings com o nome de cada classe (mesmo tamanho de n_classes).
-    matriz = matriz_confusao(T_real, T_predito, n_classes)
-
-    # Salva o CSV com cabeçalho indicando linhas = rótulo real, colunas = predito.
-    with open(caminho_csv, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(['Real \\ Predito'] + list(rotulos))
-        for i, linha in enumerate(matriz):
-            writer.writerow([rotulos[i]] + list(linha))
-
-    # Gera heatmap com matplotlib (apenas I/O e plot, sem biblioteca de RNA).
-    fig, ax = plt.subplots(figsize=(max(6, n_classes * 0.4), max(5, n_classes * 0.4)))
-    im = ax.imshow(matriz, cmap='Blues', aspect='auto')
-    ax.set_title(titulo)
-    ax.set_xlabel('Classe Predita')
-    ax.set_ylabel('Classe Real')
-    ax.set_xticks(range(n_classes))
-    ax.set_yticks(range(n_classes))
-    ax.set_xticklabels(rotulos, rotation=45, ha='right')
-    ax.set_yticklabels(rotulos)
-
-    # Anota o valor de cada célula para leitura direta.
-    limite = matriz.max() / 2.0 if matriz.max() > 0 else 0.5
-    for i in range(n_classes):
-        for j in range(n_classes):
-            cor = 'white' if matriz[i, j] > limite else 'black'
-            ax.text(j, i, str(matriz[i, j]), ha='center', va='center', color=cor, fontsize=8)
-
-    fig.colorbar(im, ax=ax)
-    fig.tight_layout()
-    fig.savefig(caminho_png, bbox_inches='tight')
-    plt.close(fig)
-
-    return matriz
-
-
 def salvar_saidas_teste(X_teste, T_real, T_predito, caminho):
     # salva as saídas do teste em CSV para análise posterior.
     # Cada linha contém o rótulo real (esquerda) e a classe predita pela rede (direita),
@@ -93,3 +53,45 @@ def salvar_saidas_teste(X_teste, T_real, T_predito, caminho):
         writer.writerow(['Rotulo_Real', 'Classe_Predita'])
         for r, p in zip(T_real, T_predito):
             writer.writerow([r, p])
+
+
+def salvar_matriz_confusao(matriz, caminho):
+    # Salva a matriz de confusão em um arquivo CSV.
+    # Auxilia na avaliação de generalização da rede descrita na especificação
+    # do trabalho e no slide 80 - Fausett (aplicação da rede neural).
+    with open(caminho, 'w', newline='') as f:
+        writer = csv.writer(f)
+        for linha in matriz:
+            writer.writerow(linha)
+
+
+def plotar_analise_completa_slides(erros_treino, erros_val, erros_teste, erros_autoral, pesos_v, pesos_w):
+    # Função para gerar gráficos exclusivos da Apresentação
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    epocas = range(1, len(erros_treino) + 1)
+    
+    # Gráfico 1: Evolução dos Erros em Todos os Conjuntos
+    ax1.plot(epocas, erros_treino, 'b-', label='Treino')
+    if erros_val: ax1.plot(epocas, erros_val, 'r--', label='Validação')
+    if erros_teste: ax1.plot(epocas, erros_teste, 'g:', label='Teste')
+    if erros_autoral and erros_autoral[0] is not None: 
+        ax1.plot(epocas, erros_autoral, 'm-.', label='Ruído/Autoral')
+        
+    ax1.set_title('Convergência do Erro (Parada Antecipada)')
+    ax1.set_xlabel('Época')
+    ax1.set_ylabel('Erro Quadrático Médio')
+    ax1.legend()
+    ax1.grid(True)
+    
+    # Gráfico 2: Estabilidade Numérica dos Pesos
+    ax2.plot(epocas, pesos_v, 'c-', label='Magnitude Média (Oculta - V)')
+    ax2.plot(epocas, pesos_w, 'y-', label='Magnitude Média (Saída - W)')
+    ax2.set_title('Estabilização dos Pesos Sinápticos')
+    ax2.set_xlabel('Época')
+    ax2.set_ylabel('Média Absoluta dos Pesos')
+    ax2.legend()
+    ax2.grid(True)
+    
+    plt.tight_layout()
+    plt.savefig('grafico_analise_completa.png', bbox_inches='tight', dpi=300)
+    plt.close()

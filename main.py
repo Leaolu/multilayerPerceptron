@@ -5,12 +5,13 @@
 import numpy as np
 import argparse
 import os
+import time
 from mlp_init import (inicializar_pesos, carregar_dataset_csv, carregar_caracteres_completo,
                       dividir_dados, salvar_historico_erro, salvar_pesos,
                       carregar_letras_com_buraco, carregar_letras_com_curva)
 from mlp_forward import inferencia
 from mlp_treino import treinar, calcular_erro_conjunto
-from mlp_avaliacao import matriz_confusao, acuracia, plotar_curva_erro, salvar_saidas_teste, salvar_matriz_confusao
+from mlp_avaliacao import matriz_confusao, acuracia, plotar_curva_erro, salvar_saidas_teste, salvar_matriz_confusao, plotar_analise_completa_slides
 
 
 def converter_para_one_hot(T, n_classes):
@@ -72,6 +73,18 @@ def main():
 
     T_treino_one_hot = converter_para_one_hot(T_treino, n_saidas)
     T_val_one_hot = converter_para_one_hot(T_val, n_saidas)
+    T_teste_one_hot = converter_para_one_hot(T_teste, n_saidas)
+
+    # Carregamento antecipado do Autoral para geração do Gráfico de Slide
+    X_aut, T_aut_one_hot = None, None
+    try:
+        if caso == 1: X_aut_temp, T_aut_temp = carregar_letras_com_buraco("X_autoral.txt", "Y_autoral.txt")
+        elif caso == 2: X_aut_temp, T_aut_temp = carregar_letras_com_curva("X_autoral.txt", "Y_autoral.txt")
+        else: X_aut_temp, T_aut_temp = carregar_caracteres_completo("X_autoral.txt", "Y_autoral.txt")
+        X_aut = X_aut_temp
+        T_aut_one_hot = converter_para_one_hot(T_aut_temp, n_saidas)
+    except FileNotFoundError:
+        pass
 
     print(f"Configuração: Hidden={n_escondidos} | Alpha={alpha} | Max Épocas={max_epocas} | Paciência={paciencia}")
     print(f"Problema    : {'Multiclasse (26)' if caso == 0 else 'Binário (2)'}")
@@ -87,9 +100,16 @@ def main():
         f.write(f"Taxa de Aprendizado: {alpha} | Paciencia (Early Stop): {paciencia}\n")
         f.write(f"Maximo Epocas: {max_epocas} | Erro Minimo: {erro_minimo}\n")
 
-    # Execução do treinamento (Passos 1-9 do algoritmo, slide 68 - Fausett)
+    # Início da Cronometragem e Execução do treinamento
+    tempo_inicio = time.time()
     print("Iniciando treinamento...")
-    v, v0, w, w0, erros_treino, erros_val = treinar(X_treino, T_treino_one_hot, X_val, T_val_one_hot, v, v0, w, w0, alpha, max_epocas, erro_minimo, paciencia)
+    v, v0, w, w0, erros_treino, erros_val, erros_teste, erros_aut, p_v, p_w = treinar(X_treino, T_treino_one_hot, X_val, T_val_one_hot, X_teste, T_teste_one_hot, X_aut, T_aut_one_hot, v, v0, w, w0, alpha, max_epocas, erro_minimo, paciencia)
+    
+    tempo_execucao = time.time() - tempo_inicio
+    with open("tempo_execucao.txt", "w") as f_tempo:
+        f_tempo.write(f"{tempo_execucao:.4f}")
+
+    plotar_analise_completa_slides(erros_treino, erros_val, erros_teste, erros_aut, p_v, p_w)
 
     salvar_pesos(v, v0, w, w0, "pesos_finais.txt")
     salvar_historico_erro(erros_treino, "historico_erros.csv", erros_val)
@@ -99,29 +119,20 @@ def main():
     T_predito_ints = inferencia(X_teste, v, v0, w, w0)
     acc = acuracia(T_teste, T_predito_ints)
 
+    # Gera e salva a matriz de confusão do conjunto de teste principal
+    matriz_teste = matriz_confusao(T_teste, T_predito_ints, n_saidas)
+    salvar_matriz_confusao(matriz_teste, "matriz_confusao_teste.csv")
+
     epocas_executadas = len(erros_treino)
     erro_final = erros_treino[-1]
 
     print(f"\nResultados: Épocas={epocas_executadas} | Erro Treino Final={erro_final:.4f} | Acurácia no Teste={acc*100:.2f}%")
+    print("\nMatriz de Confusão (Conjunto de Teste):")
+    print(matriz_teste)
 
     T_teste_letras = mapear_saida_para_texto(T_teste, caso)
     T_predito_letras = mapear_saida_para_texto(T_predito_ints, caso)
     salvar_saidas_teste(X_teste, T_teste_letras, T_predito_letras, "saidas_teste.csv")
-
-    # Matriz de confusão do conjunto de teste (requisito do vídeo).
-    # Para o caso multiclasse usamos os rótulos A-Z; para os binários,
-    # rótulos textuais que descrevem a presença/ausência da característica.
-    if caso == 0:
-        rotulos_teste = [chr(i + ord('A')) for i in range(n_saidas)]
-    elif caso == 1:
-        rotulos_teste = ["sem_buraco", "com_buraco"]
-    else:
-        rotulos_teste = ["sem_curva", "com_curva"]
-    salvar_matriz_confusao(
-        T_teste, T_predito_ints, n_saidas, rotulos_teste,
-        "matriz_confusao_teste.csv", "matriz_confusao_teste.png",
-        titulo="Matriz de Confusão - Conjunto de Teste"
-    )
 
     # TESTE EXTRA: VARIAÇÃO AUTORAL
     # Avalia a rede treinada em um conjunto de dados com ruído feito por nós,
@@ -130,38 +141,37 @@ def main():
         print("\n--- Teste de Variação Autoral ---")
 
         if caso == 1:
-            X_aut, T_aut = carregar_letras_com_buraco("X_autoral.txt", "Y_autoral.txt")
+            X_aut_final, T_aut_final = carregar_letras_com_buraco("X_autoral.txt", "Y_autoral.txt")
         elif caso == 2:
-            X_aut, T_aut = carregar_letras_com_curva("X_autoral.txt", "Y_autoral.txt")
+            X_aut_final, T_aut_final = carregar_letras_com_curva("X_autoral.txt", "Y_autoral.txt")
         else:
-            X_aut, T_aut = carregar_caracteres_completo("X_autoral.txt", "Y_autoral.txt")
+            X_aut_final, T_aut_final = carregar_caracteres_completo("X_autoral.txt", "Y_autoral.txt")
 
-        T_aut_one_hot = converter_para_one_hot(T_aut, n_classes=n_saidas)
+        T_aut_final_one_hot = converter_para_one_hot(T_aut_final, n_classes=n_saidas)
 
-        erro_medio_aut = calcular_erro_conjunto(X_aut, T_aut_one_hot, v, v0, w, w0)
+        erro_medio_aut_final = calcular_erro_conjunto(X_aut_final, T_aut_final_one_hot, v, v0, w, w0)
 
-        T_predito_aut_ints = inferencia(X_aut, v, v0, w, w0)
-        acc_autoral = acuracia(T_aut, T_predito_aut_ints)
+        T_predito_aut_ints = inferencia(X_aut_final, v, v0, w, w0)
+        acc_autoral = acuracia(T_aut_final, T_predito_aut_ints)
 
-        print(f"Erro Médio no conjunto AUTORAL: {erro_medio_aut:.6f}")
+        # Gera e salva a matriz de confusão do conjunto autoral
+        matriz_autoral = matriz_confusao(T_aut_final, T_predito_aut_ints, n_saidas)
+        salvar_matriz_confusao(matriz_autoral, "matriz_confusao_autoral.csv")
+
+        print(f"Erro Médio no conjunto AUTORAL: {erro_medio_aut_final:.6f}")
         print(f"Acurácia no conjunto AUTORAL: {acc_autoral*100:.2f}%")
+        print("\nMatriz de Confusão (Conjunto Autoral):")
+        print(matriz_autoral)
 
         with open("resumo_teste_autoral.txt", "w") as f_resumo:
             f_resumo.write("=== Resultado do Teste Autoral ===\n")
-            f_resumo.write(f"Erro Quadrático Médio: {erro_medio_aut:.6f}\n")
+            f_resumo.write(f"Erro Quadrático Médio: {erro_medio_aut_final:.6f}\n")
             f_resumo.write(f"Acurácia Alcançada   : {acc_autoral*100:.2f}%\n")
-            f_resumo.write(f"Quantidade de Amostras: {len(X_aut)}\n")
+            f_resumo.write(f"Quantidade de Amostras: {len(X_aut_final)}\n")
 
-        T_aut_letras = mapear_saida_para_texto(T_aut, caso)
+        T_aut_letras = mapear_saida_para_texto(T_aut_final, caso)
         T_predito_aut_letras = mapear_saida_para_texto(T_predito_aut_ints, caso)
-        salvar_saidas_teste(X_aut, T_aut_letras, T_predito_aut_letras, "saidas_letras_autoral.csv")
-
-        # Matriz de confusão do conjunto autoral (mesma estratégia de rótulos do teste).
-        salvar_matriz_confusao(
-            T_aut, T_predito_aut_ints, n_saidas, rotulos_teste,
-            "matriz_confusao_autoral.csv", "matriz_confusao_autoral.png",
-            titulo="Matriz de Confusão - Conjunto Autoral"
-        )
+        salvar_saidas_teste(X_aut_final, T_aut_letras, T_predito_aut_letras, "saidas_letras_autoral.csv")
 
         print("Resultados gravados em 'resumo_teste_autoral.txt' e 'saidas_letras_autoral.csv'")
 
