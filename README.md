@@ -25,7 +25,7 @@ As referências nos comentários do código seguem a numeração das slides dest
 
 | Arquivo | Descrição |
 |---------|-----------|
-| `main.py` | Script principal que orquestra o pipeline completo: carregamento de dados, inicialização da rede, treinamento com parada antecipada, avaliação no conjunto de teste e teste com base ruidosa. ⭐ Gera também: matriz de confusão em PNG |
+| `main.py` | Script principal que orquestra o pipeline completo: carregamento de dados, inicialização da rede, treinamento com parada antecipada, avaliação no conjunto de teste e teste com base ruidosa. Gera também: matriz de confusão em PNG |
 | `mlp_init.py` | Funções de inicialização: geração de pesos aleatórios (Passo 0 - Fausett), carregamento dos datasets de caracteres (multiclasse e binário), divisão treino/validação/teste, e persistência de pesos. |
 | `mlp_forward.py` | Implementação do estágio feedforward (Passos 3, 4 e 5 - Fausett): função sigmoide, propagação pela camada escondida e camada de saída, e predição via index do maior elemento. |
 | `mlp_backward.py` | Implementação da backpropagation do erro (Passos 6 e 7 - Fausett): cálculo dos gradientes locais (δ) para camada de saída e escondida, e cálculo das correções de pesos. |
@@ -72,13 +72,13 @@ chmod +x run_experimentos.sh
 python melhor_combinacao.py --caso 0
 ```
 
-### Encontrar pior combinação de um caso (⭐ novo)
+### Encontrar pior combinação de um caso
 
 ```bash
 python pior_combinacao.py --caso 0
 ```
 
-### Gerar gráficos 3D de análise de tempo (⭐ novo)
+### Gerar gráficos 3D de análise de tempo
 
 ```bash
 # Execute após a bateria de experimentos (ou execute individualmente):
@@ -110,7 +110,7 @@ python plot_tempos_3d.py
 |---------|-----------|
 | `saidas_teste.csv` | Rótulo real e classe predita para cada amostra do conjunto de teste original. |
 | `matriz_confusao_teste.csv` | Matriz de confusão em formato CSV. |
-| `matriz_confusao_teste.png` | ⭐ Visualização em PNG da matriz de confusão com labels das classes. |
+| `matriz_confusao_teste.png` | Visualização em PNG da matriz de confusão com labels das classes. |
 | `resumo_teste_original.txt` | Erro médio e acurácia no conjunto de teste original. |
 
 **Pasta `ruidoso/` — Resultados no conjunto de teste ruidoso (130 amostras com 5 variações por letra):**
@@ -119,7 +119,7 @@ python plot_tempos_3d.py
 |---------|-----------|
 | `saidas_ruidoso.csv` | Rótulo real e classe predita para cada amostra do conjunto ruidoso. |
 | `matriz_confusao_ruidoso.csv` | Matriz de confusão em formato CSV. |
-| `matriz_confusao_ruidoso.png` | ⭐ Visualização em PNG da matriz de confusão com labels das classes. |
+| `matriz_confusao_ruidoso.png` | Visualização em PNG da matriz de confusão com labels das classes. |
 | `resumo_teste_ruidoso.txt` | Erro médio e acurácia no conjunto ruidoso. |
 | `X_ruidoso.txt` | Dados das amostras ruidosas (cópia para referência). |
 | `Y_ruidoso.txt` | Rótulos das amostras ruidosas (cópia para referência). |
@@ -172,7 +172,7 @@ resultados_mlp/
 
 Cada diretório contém os arquivos do experimento campeão + um arquivo `hiperparametros_vencedores_caso_X.txt` com o resumo final.
 
-### Pelo script de pior combinação (⭐ novo: `pior_combinacao.py`)
+### Pelo script de pior combinação (`pior_combinacao.py`)
 
 | Diretório gerado | Caso |
 |-----------------|------|
@@ -182,34 +182,9 @@ Cada diretório contém os arquivos do experimento campeão + um arquivo `hiperp
 
 Cada diretório contém os arquivos do experimento com pior desempenho + um arquivo `hiperparametros_pior_caso_X.txt` com o resumo de análise contrastante.
 
-### Pelos gráficos 3D (⭐ novo: `plot_tempos_3d.py`)
+### Pelo script de gerar tabelas de tempo médio de execução (`gerar_tabelas_tempo.py`)
 
-Estrutura gerada em `tempos_execucao/`:
-
-```
-tempos_execucao/
-├── caso_0/
-│   ├── tempo_3d_neurons_vs_epochs.png       # Neurônios Ocultos vs Épocas vs Tempo
-│   ├── tempo_3d_alpha_vs_epochs.png         # Alpha (Taxa Aprendizado) vs Épocas vs Tempo
-│   ├── tempo_3d_erro_vs_epochs.png          # Erro Mínimo vs Épocas vs Tempo
-│   └── tempo_3d_maxepocas_vs_epochs.png     # Max Épocas vs Épocas vs Tempo
-├── caso_1/
-│   ├── tempo_3d_neurons_vs_epochs.png
-│   ├── tempo_3d_alpha_vs_epochs.png
-│   ├── tempo_3d_erro_vs_epochs.png
-│   └── tempo_3d_maxepocas_vs_epochs.png
-└── caso_2/
-    ├── tempo_3d_neurons_vs_epochs.png
-    ├── tempo_3d_alpha_vs_epochs.png
-    ├── tempo_3d_erro_vs_epochs.png
-    └── tempo_3d_maxepocas_vs_epochs.png
-```
-
-**Estrutura dos Gráficos 3D:**
-- **Eixo X:** Um hiperparâmetro específico (neurônios ocultos, alpha, erro mínimo, ou max épocas)
-- **Eixo Y:** Número da época de treinamento (1, 2, 3, ..., N)
-- **Eixo Z:** Tempo acumulado até aquela época
-- **Cor (Colormap):** Intensidade de tempo (escala viridis: azul=baixo, amarelo=alto)
+Arquivo `Tabelas_Tempo.md` gerado na raiz contendo tabelas relacionando o tempo de execução com cada uma das variações de hiperparâmetros.
 
 ---
 
@@ -225,13 +200,10 @@ A especificação do trabalho exige os seguintes artefatos de saída. Abaixo, ca
 | 4 | Erro cometido pela rede em cada iteração do treinamento | `historico_erros_original.csv` + `historico_erros_ruidoso.csv` |
 | 5 | Saídas produzidas pela rede para cada dado de teste | `original/saidas_teste.csv` |
 | 6 | Gráfico de comportamento de erros | `grafico_analise_completa.png` |
-| 7 | Matriz de confusão | `original/matriz_confusao_teste.png` ⭐ + `ruidoso/matriz_confusao_ruidoso.png` ⭐ (em PNG com labels) |
+| 7 | Matriz de confusão | `original/matriz_confusao_teste.png` + `ruidoso/matriz_confusao_ruidoso.png`  (em PNG com labels) |
 | 8 | Teste com variação ruidosa dos dados | `ruidoso/resumo_teste_ruidoso.txt` + `ruidoso/saidas_ruidoso.csv` |
 | 9 | Base de dados ruidosa (com ruído) | `X_ruidoso.txt` + `Y_ruidoso.txt` |
 | 10 | Código bem documentado com nomenclatura da aula | Comentários em todos os `.py` referenciando slides |
-| ⭐ | **Novo: Análise visual de matrizes de confusão** | Heatmaps em PNG com cores, anotações e labels de classes |
-| ⭐ | **Novo: Análise de pior desempenho** | Pastas `pior_combinacao_*` + `hiperparametros_pior_caso_X.txt` |
-| ⭐ | **Novo: Análise 3D de tempo vs épocas vs hiperparâmetros** | 12 gráficos 3D em `tempos_execucao/caso_X/` |
 
 ---
 
