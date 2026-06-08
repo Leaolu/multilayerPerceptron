@@ -130,9 +130,9 @@ python analise_geral_graficos.py
 
 echo ""
 echo -e "${AMARELO}==========================================================${NC}"
-echo -e "${AMARELO} Gerando graficos 3D de analise de tempo...${NC}"
+echo -e "${AMARELO} Gerando tabelas de analise de tempo medio...${NC}"
 echo -e "${AMARELO}==========================================================${NC}"
-python plot_tempos_3d.py
+python gerar_tabelas_tempo.py > Tabela_Tempo.md
 
 echo ""
 echo -e "${VERDE}==========================================================${NC}"
